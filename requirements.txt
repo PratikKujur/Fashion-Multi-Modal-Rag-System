@@ -1,0 +1,15 @@
+datasets
+qdrant-client
+pandas
+numpy
+transformers
+torch
+pillow
+python-dotenv
+PyPDF2
+tqdm
+accelerate
+scipy
+unstructured[all-docs]
+sentence-transformers
+langchain-text-splitters
