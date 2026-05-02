@@ -13,3 +13,12 @@ scipy
 unstructured[all-docs]
 sentence-transformers
 langchain-text-splitters
+fastapi
+langchain-groq
+pydantic_settings
+pydantic
+uvicorn
+streamlit
+python-multipart
+langchain_community
+flashrank

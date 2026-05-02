@@ -20,8 +20,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
-QDRANT_API_KEY = os.getenv("vdb_api")
-QDRANT_ENDPOINT = os.getenv("cluster_endpoint")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+QDRANT_ENDPOINT = os.getenv("QDRANT_URL")
 
 TEXT_VECTOR_SIZE = 512
 IMAGE_VECTOR_SIZE = 512
@@ -226,6 +226,12 @@ def process_parquet_files(parquet_dir: str, existing_text_ids: Set[int], existin
                     point_id = abs(hash(str(item.get("item_ID", idx)) + "_image"))
                     if point_id not in existing_image_ids:
                         image = Image.open(io.BytesIO(item["image"]["bytes"]))
+                        # Save image to disk with absolute path
+                        image_dir = Path.cwd() / "dataset" / "images"
+                        image_dir.mkdir(parents=True, exist_ok=True)
+                        image_filename = f"{item.get('item_ID', idx)}_{idx}.jpg"
+                        image_path = image_dir / image_filename
+                        image.save(image_path)
                         embedding = get_image_embedding(image)
                         image_points.append({
                             "id": point_id,
@@ -235,6 +241,7 @@ def process_parquet_files(parquet_dir: str, existing_text_ids: Set[int], existin
                                 "item_id": str(item.get("item_ID", "")),
                                 "category": item.get("category", "unknown"),
                                 "type": "image",
+                                "image_path": str(image_path.absolute()),
                             },
                         })
                 except Exception as e:

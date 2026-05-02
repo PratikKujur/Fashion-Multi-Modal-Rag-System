@@ -9,8 +9,8 @@ from PIL import Image
 
 load_dotenv()
 
-QDRANT_API_KEY = os.getenv("vdb_api")
-QDRANT_ENDPOINT = os.getenv("cluster_endpoint")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+QDRANT_ENDPOINT = os.getenv("QDRANT_URL")
 
 TEXT_COLLECTION_NAME = "fashion-text"
 IMAGE_COLLECTION_NAME = "fashion-image"
@@ -38,19 +38,42 @@ def query_text(text: str, limit: int = 5):
     return results.points
 
 
-def query_image(image_path: str, limit: int = 5):
+def query_image(image_path: str, category: str = None, limit: int = 5):
     image = Image.open(image_path)
     inputs = clip_processor(images=image, return_tensors="pt")
     inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = clip_model.get_image_features(**inputs)
     embedding = outputs.pooler_output.cpu().numpy()[0]
-    results = qdrant_client.query_points(
+
+    filters = None
+    if category:
+        from qdrant_client.http.models import Filter, FieldCondition, MatchValue
+        filters = Filter(must=[FieldCondition(key="category", match=MatchValue(value=category))])
+
+    text_results = qdrant_client.query_points(
+        collection_name=TEXT_COLLECTION_NAME,
+        query=embedding.tolist(),
+        limit=limit,
+        query_filter=filters,
+    ).points
+
+    image_results = qdrant_client.query_points(
         collection_name=IMAGE_COLLECTION_NAME,
         query=embedding.tolist(),
         limit=limit,
-    )
-    return results.points
+        query_filter=filters,
+    ).points
+
+    combined = list(text_results) + list(image_results)
+    seen_ids = set()
+    unique = []
+    for r in combined:
+        if r.id not in seen_ids:
+            seen_ids.add(r.id)
+            unique.append(r)
+    unique.sort(key=lambda r: r.score, reverse=True)
+    return unique[:limit]
 
 
 def get_collection_info():
@@ -68,3 +91,12 @@ if __name__ == "__main__":
         results = query_text("A skirt with flat strappy sandals")
         for r in results[:3]:
             print(f"  - {r.payload.get('text', '')[:100]}...")
+
+    if info['image_points'] > 0:
+        print("\nSample image query:")
+        
+        image_path = 'D:\Projects\Fashion-Multi-Modal-Rag-System\dataset\jeans.jpg'
+        results = query_image(image_path, limit=5)
+        for r in results[:5]:
+            print(f"  - {r.payload.get('name', 'Item')} ({r.payload.get('category', '')}) - Score: {r.score:.4f}")
+        
