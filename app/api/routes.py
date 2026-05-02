@@ -4,7 +4,7 @@ from typing import Optional
 router = APIRouter()
 
 def get_fashion_service():
-    from main import app
+    from app.api.main import app
     return app.state.fashion_service
 
 @router.get("/search")
