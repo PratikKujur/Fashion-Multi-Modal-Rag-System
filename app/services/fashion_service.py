@@ -1,13 +1,12 @@
 from app.core.logging import logger
 
 class FashionService:
-    def __init__(self):
-        from main import app
-        self.qdrant = app.state.qdrant
-        self.text_encoder = app.state.text_encoder
-        self.image_encoder = app.state.image_encoder
-        self.reranker = app.state.reranker
-        self.llm = app.state.llm
+    def __init__(self, qdrant, text_encoder, image_encoder, reranker, llm):
+        self.qdrant = qdrant
+        self.text_encoder = text_encoder
+        self.image_encoder = image_encoder
+        self.reranker = reranker
+        self.llm = llm
         logger.info("FashionService initialized with all components")
 
     def _combine_results(self, text_results, image_results, limit):

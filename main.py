@@ -46,7 +46,13 @@ async def lifespan(app: FastAPI):
     # Load fashion service
     logger.info("Initializing fashion service...")
     from app.services.fashion_service import FashionService
-    app.state.fashion_service = FashionService()
+    app.state.fashion_service = FashionService(
+        qdrant=app.state.qdrant,
+        text_encoder=app.state.text_encoder,
+        image_encoder=app.state.image_encoder,
+        reranker=app.state.reranker,
+        llm=app.state.llm
+    )
     logger.info("Fashion service ready")
 
     logger.info("All components loaded successfully!")
